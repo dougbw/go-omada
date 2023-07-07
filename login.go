@@ -18,7 +18,7 @@ type Controller struct {
 	controllerId string
 	token        string
 	siteId       string
-	sites        map[string]string
+	Sites        map[string]string
 }
 
 type ControllerInfo struct {

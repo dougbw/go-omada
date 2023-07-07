@@ -1,7 +1,6 @@
 package omada
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 )
@@ -16,7 +15,6 @@ func makeDNSSafe(input string) string {
 
 	// Convert the string to lower case
 	input = strings.ToLower(input)
-	input = fmt.Sprintf("%s", input)
 
 	return input
 }

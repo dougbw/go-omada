@@ -18,6 +18,7 @@ type Controller struct {
 	controllerId string
 	token        string
 	siteId       string
+	sites        map[string]string
 }
 
 type ControllerInfo struct {
@@ -127,7 +128,7 @@ func (c *Controller) GetControllerInfo() error {
 
 }
 
-func (c *Controller) Login(user string, pass string, siteName string) error {
+func (c *Controller) Login(user string, pass string) error {
 
 	endpoint := c.baseURL + "/" + c.controllerId + "/api/v2/login"
 
@@ -169,7 +170,7 @@ func (c *Controller) Login(user string, pass string, siteName string) error {
 	token := login.Result.Token
 	c.token = token
 
-	err = c.getSiteId(siteName)
+	err = c.getSites()
 	if err != nil {
 		return err
 	}
@@ -178,7 +179,7 @@ func (c *Controller) Login(user string, pass string, siteName string) error {
 
 }
 
-func (c *Controller) getSiteId(site string) error {
+func (c *Controller) getSites() error {
 
 	path := "api/v2/users/current"
 	url := fmt.Sprintf("%s/%s/%s", c.baseURL, c.controllerId, path)
@@ -205,17 +206,11 @@ func (c *Controller) getSiteId(site string) error {
 		return err
 	}
 
-	var siteId string
+	c.sites = make(map[string]string)
 	for _, v := range currentUserResponse.Result.Privilege.Sites {
-		if v.Name == site {
-			siteId = v.Key
-		}
+		c.sites[v.Name] = v.Key
+		c.SetSite(v.Name)
 	}
-
-	if siteId == "" {
-		return fmt.Errorf("site not found: %s", site)
-	}
-	c.siteId = siteId
 
 	return nil
 

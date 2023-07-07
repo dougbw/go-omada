@@ -33,9 +33,9 @@ func (c *Controller) getSites() error {
 		return err
 	}
 
-	c.sites = make(map[string]string)
+	c.Sites = make(map[string]string)
 	for _, v := range currentUserResponse.Result.Privilege.Sites {
-		c.sites[v.Name] = v.Key
+		c.Sites[v.Name] = v.Key
 		c.SetSite(v.Name)
 	}
 
@@ -44,7 +44,7 @@ func (c *Controller) getSites() error {
 }
 
 func (c *Controller) SetSite(site string) error {
-	siteId, ok := c.sites[site]
+	siteId, ok := c.Sites[site]
 	if !ok {
 		return fmt.Errorf("site not found: %s", site)
 	}

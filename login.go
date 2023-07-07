@@ -18,7 +18,7 @@ type Controller struct {
 	controllerId string
 	token        string
 	siteId       string
-	sites        map[string]string
+	Sites        map[string]string
 }
 
 type ControllerInfo struct {
@@ -170,7 +170,7 @@ func (c *Controller) Login(user string, pass string) error {
 	token := login.Result.Token
 	c.token = token
 
-	err = c.GetSites()
+	err = c.getSites()
 	if err != nil {
 		return err
 	}

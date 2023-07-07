@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (c *Controller) GetSites() error {
+func (c *Controller) getSites() error {
 
 	path := "api/v2/users/current"
 	url := fmt.Sprintf("%s/%s/%s", c.baseURL, c.controllerId, path)

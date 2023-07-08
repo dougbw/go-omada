@@ -33,7 +33,12 @@ func main() {
 	}
 
 	// login
-	err = omada.Login(user, pass, siteName)
+	err = omada.Login(user, pass)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// set site
+	err = omada.SetSite(siteName)
 	if err != nil {
 		log.Fatal(err)
 	}

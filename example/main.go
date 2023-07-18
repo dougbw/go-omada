@@ -70,4 +70,13 @@ func main() {
 		fmt.Printf("network name: %s, subnet: %s, domain: %s\n", network.Name, network.Subnet, network.Domain)
 	}
 
+	dhcpr, err := omada.GetDhcpReservations()
+	if err != nil {
+		log.Printf("error getting dhcp reservations: %v", err)
+	}
+
+	for _, r := range dhcpr {
+		fmt.Printf("dhcp ip: %s, description: %s\n", r.IP, r.Description)
+	}
+
 }

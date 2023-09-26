@@ -29,7 +29,7 @@ type Client struct {
 func (c *Controller) GetClients() ([]Client, error) {
 
 	token := c.token
-	url := fmt.Sprintf("%s/%s/api/v2/sites/%s/clients?currentPage=1&currentPageSize=999", c.baseURL, c.controllerId, c.siteId)
+	url := fmt.Sprintf("%s/%s/api/v2/sites/%s/clients?currentPage=1&currentPageSize=999&filters.active=true", c.baseURL, c.controllerId, c.siteId)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -49,6 +49,11 @@ func (c *Controller) GetClients() ([]Client, error) {
 
 	var clientResponse clientResponse
 	if err := json.NewDecoder(res.Body).Decode(&clientResponse); err != nil {
+		return nil, err
+	}
+
+	if clientResponse.ErrorCode != 0 {
+		err = fmt.Errorf("failed to get list of clients. API response is: errorCode: '%d', message: '%s'", clientResponse.ErrorCode, clientResponse.Msg)
 		return nil, err
 	}
 

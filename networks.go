@@ -3,7 +3,6 @@ package omada
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"sort"
 )
 
@@ -27,29 +26,23 @@ type OmadaNetwork struct {
 
 func (c *Controller) GetNetworks() ([]OmadaNetwork, error) {
 
-	url := fmt.Sprintf("%s/%s/api/v2/sites/%s/setting/lan/networks?currentPage=1&currentPageSize=999", c.baseURL, c.controllerId, c.siteId)
-	req, err := http.NewRequest("GET", url, nil)
+	path := fmt.Sprintf("api/v2/sites/%s/setting/lan/networks", c.siteId)
+	queryParams := map[string]string{
+		"currentPage":     "1",
+		"currentPageSize": "999",
+	}
+	res, err := c.invokeRequest(path, queryParams)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Add("Csrf-Token", c.token)
-
-	res, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("status code: %d", res.StatusCode)
-		return nil, err
-	}
-
-	// respBody, _ := ioutil.ReadAll(res.Body)
-	// fmt.Println(string(respBody))
 
 	var networkResponse GetNetworksResponse
 	if err := json.NewDecoder(res.Body).Decode(&networkResponse); err != nil {
+		return nil, err
+	}
+
+	if networkResponse.ErrorCode != 0 {
+		err = fmt.Errorf("failed to get list of networks: code='%d', message='%s'", networkResponse.ErrorCode, networkResponse.Msg)
 		return nil, err
 	}
 

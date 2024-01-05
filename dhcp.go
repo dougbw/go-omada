@@ -3,7 +3,6 @@ package omada
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 )
 
 type dhcpReservationResponse struct {
@@ -31,26 +30,24 @@ type DhcpReservation struct {
 }
 
 func (c *Controller) GetDhcpReservations() ([]DhcpReservation, error) {
-	url := fmt.Sprintf("%s/%s/api/v2/sites/%s/setting/service/dhcp?currentPage=1&currentPageSize=999", c.baseURL, c.controllerId, c.siteId)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Add("Csrf-Token", c.token)
 
-	res, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
+	path := fmt.Sprintf("api/v2/sites/%s/setting/service/dhcp", c.siteId)
+	queryParams := map[string]string{
+		"currentPage":     "1",
+		"currentPageSize": "999",
 	}
-
-	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("status code: %d", res.StatusCode)
+	res, err := c.invokeRequest(path, queryParams)
+	if err != nil {
 		return nil, err
 	}
 
 	var dhcpReservationResponse dhcpReservationResponse
 	if err := json.NewDecoder(res.Body).Decode(&dhcpReservationResponse); err != nil {
+		return nil, err
+	}
+
+	if dhcpReservationResponse.ErrorCode != 0 {
+		err = fmt.Errorf("failed to get list of dhcp reservation: code='%d', message='%s'", dhcpReservationResponse.ErrorCode, dhcpReservationResponse.Msg)
 		return nil, err
 	}
 

@@ -3,7 +3,6 @@ package omada
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"sort"
 )
 
@@ -28,22 +27,14 @@ type Client struct {
 
 func (c *Controller) GetClients() ([]Client, error) {
 
-	token := c.token
-	url := fmt.Sprintf("%s/%s/api/v2/sites/%s/clients?currentPage=1&currentPageSize=999&filters.active=true", c.baseURL, c.controllerId, c.siteId)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
+	path := fmt.Sprintf("api/v2/sites/%s/clients", c.siteId)
+	queryParams := map[string]string{
+		"currentPage":     "1",
+		"currentPageSize": "999",
+		"filters.active":  "true",
 	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Add("Csrf-Token", token)
-
-	res, err := c.httpClient.Do(req)
+	res, err := c.invokeRequest(path, queryParams)
 	if err != nil {
-		return nil, err
-	}
-
-	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("status code: %d", res.StatusCode)
 		return nil, err
 	}
 
@@ -53,7 +44,7 @@ func (c *Controller) GetClients() ([]Client, error) {
 	}
 
 	if clientResponse.ErrorCode != 0 {
-		err = fmt.Errorf("failed to get list of clients. API response is: errorCode: '%d', message: '%s'", clientResponse.ErrorCode, clientResponse.Msg)
+		err = fmt.Errorf("failed to get list of clients: code='%d', message='%s'", clientResponse.ErrorCode, clientResponse.Msg)
 		return nil, err
 	}
 

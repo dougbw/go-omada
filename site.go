@@ -3,34 +3,23 @@ package omada
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 )
 
 func (c *Controller) getSites() error {
 
 	path := "api/v2/users/current"
-	url := fmt.Sprintf("%s/%s/%s", c.baseURL, c.controllerId, path)
-
-	req, err := http.NewRequest("GET", url, nil)
+	res, err := c.invokeRequest(path, nil)
 	if err != nil {
-		return err
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Add("Csrf-Token", c.token)
-
-	res, err := c.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("status code: %d", res.StatusCode)
 		return err
 	}
 
 	var currentUserResponse currentUserResponse
 	if err := json.NewDecoder(res.Body).Decode(&currentUserResponse); err != nil {
 		return err
+	}
+
+	if currentUserResponse.ErrorCode != 0 {
+		return fmt.Errorf("failed to list sites: code='%d', message='%s'", currentUserResponse.ErrorCode, currentUserResponse.Msg)
 	}
 
 	c.Sites = make(map[string]string)

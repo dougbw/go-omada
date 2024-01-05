@@ -3,7 +3,6 @@ package omada
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"sort"
 )
 
@@ -140,26 +139,23 @@ type Device struct {
 
 func (c *Controller) GetDevices() ([]Device, error) {
 
-	url := fmt.Sprintf("%s/%s/api/v2/sites/%s/devices?currentPage=1&currentPageSize=999", c.baseURL, c.controllerId, c.siteId)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
+	path := fmt.Sprintf("api/v2/sites/%s/devices", c.siteId)
+	queryParams := map[string]string{
+		"currentPage":     "1",
+		"currentPageSize": "999",
 	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Add("Csrf-Token", c.token)
-
-	res, err := c.httpClient.Do(req)
+	res, err := c.invokeRequest(path, queryParams)
 	if err != nil {
-		return nil, err
-	}
-
-	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("status code: %d", res.StatusCode)
 		return nil, err
 	}
 
 	var deviceResponse deviceResponse
 	if err := json.NewDecoder(res.Body).Decode(&deviceResponse); err != nil {
+		return nil, err
+	}
+
+	if deviceResponse.ErrorCode != 0 {
+		err = fmt.Errorf("failed to get list of devices: code='%d', message='%s'", deviceResponse.ErrorCode, deviceResponse.Msg)
 		return nil, err
 	}
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/cookiejar"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -102,8 +103,11 @@ func New(baseURL string) Controller {
 
 func (c *Controller) GetControllerInfo() error {
 
-	url := c.baseURL + "/api/info"
-	req, err := http.NewRequest("GET", url, nil)
+	address, err := url.JoinPath(c.baseURL, "/api/info")
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("GET", address, nil)
 	if err != nil {
 		return err
 	}
@@ -118,19 +122,27 @@ func (c *Controller) GetControllerInfo() error {
 		return fmt.Errorf("status code: %d", res.StatusCode)
 	}
 
-	var info ControllerInfo
-	if err := json.NewDecoder(res.Body).Decode(&info); err != nil {
+	var infoResponse ControllerInfo
+	if err := json.NewDecoder(res.Body).Decode(&infoResponse); err != nil {
 		return err
 	}
 
-	c.controllerId = info.Result.OmadacID
+	if infoResponse.ErrorCode != 0 {
+		err = fmt.Errorf("failed to get controller info: code='%d', message='%s'", infoResponse.ErrorCode, infoResponse.Msg)
+		return err
+	}
+
+	c.controllerId = infoResponse.Result.OmadacID
 	return nil
 
 }
 
 func (c *Controller) Login(user string, pass string) error {
 
-	endpoint := c.baseURL + "/" + c.controllerId + "/api/v2/login"
+	endpoint, err := url.JoinPath(c.baseURL, c.controllerId, "/api/v2/login")
+	if err != nil {
+		return err
+	}
 
 	loginBody := LoginBody{
 		Username: user,
@@ -164,11 +176,10 @@ func (c *Controller) Login(user string, pass string) error {
 	}
 
 	if login.ErrorCode != 0 {
-		return fmt.Errorf("omada login error, code: %d, message: %s", login.ErrorCode, login.Msg)
+		return fmt.Errorf("omada controller login error, code: %d, message: %s", login.ErrorCode, login.Msg)
 	}
 
-	token := login.Result.Token
-	c.token = token
+	c.token = login.Result.Token
 
 	err = c.getSites()
 	if err != nil {

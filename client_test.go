@@ -2,7 +2,6 @@ package omada
 
 import (
 	"net"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,8 +14,8 @@ func TestGetClients(t *testing.T) {
 		t.Fatalf("test failure on 'GetClients': %v", err)
 	}
 
+	expectedClients := 3
 	assert.Equal(t, testController.siteId, "Default")
-	expectedClients, _ := strconv.Atoi(testData["expectedClients"])
 	assert.Len(t, clients, expectedClients)
 	assert.Equal(t, "Client 001", clients[0].Name)
 	assert.Equal(t, "Google Nest Mini", clients[1].Name)

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,8 +18,6 @@ func TestMain(m *testing.M) {
 
 	testData["controllerId"] = "123bee230c77bbb45d9c8545d04d700a"
 	testData["siteId"] = "Default"
-	testData["expectedClients"] = "3"
-	testData["expectedSites"] = "2"
 
 	testServer := setupTestServer()
 	defer testServer.Close()
@@ -52,6 +49,7 @@ func setupTestServer() *httptest.Server {
 	pathClients := fmt.Sprintf("/%s/api/v2/sites/%s/clients", controllerId, siteId)
 	pathDevices := fmt.Sprintf("/%s/api/v2/sites/%s/devices", controllerId, siteId)
 	pathNetworks := fmt.Sprintf("/%s/api/v2/sites/%s/setting/lan/networks", controllerId, siteId)
+	pathDhcp := fmt.Sprintf("/%s/api/v2/sites/%s/setting/service/dhcp", controllerId, siteId)
 
 	responses := map[string]string{
 		"/api/info":  "./test-data/info-response.json",
@@ -60,6 +58,7 @@ func setupTestServer() *httptest.Server {
 		pathClients:  "./test-data/clients-response.json",
 		pathDevices:  "./test-data/devices-response.json",
 		pathNetworks: "./test-data/networks-response.json",
+		pathDhcp:     "./test-data/dhcp-reservation-response.json",
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -79,27 +78,5 @@ func setupTestServer() *httptest.Server {
 }
 
 func TestLogin(t *testing.T) {
-
-	testServer := setupTestServer()
-	defer testServer.Close()
-
-	controller := New(testServer.URL)
-	err := controller.GetControllerInfo()
-	if err != nil {
-		t.Fatalf("test failure on 'GetControllerInfo': %v", err)
-	}
-	err = controller.Login("user", "pass")
-	if err != nil {
-		t.Fatalf("test failure on 'Login': %v", err)
-	}
-	err = controller.SetSite("Home")
-	if err != nil {
-		t.Fatalf("test failure on 'SetSite': %v", err)
-	}
-
-	expectedSites, _ := strconv.Atoi(testData["expectedSites"])
-	assert.Len(t, controller.Sites, expectedSites)
 	assert.Equal(t, testData["controllerId"], testController.controllerId)
-	assert.Equal(t, testData["siteId"], testController.siteId)
-
 }

@@ -18,10 +18,11 @@ type GetNetworksResponse struct {
 }
 
 type OmadaNetwork struct {
-	Id     string `json:"id"`
-	Name   string `json:"name,omitempty"`
-	Domain string `json:"domain,omitempty"`
-	Subnet string `json:"gatewaySubnet"`
+	Id      string `json:"id"`
+	Name    string `json:"name,omitempty"`
+	Domain  string `json:"domain,omitempty"`
+	Purpose string `json:"purpose"`
+	Subnet  string `json:"gatewaySubnet"`
 }
 
 func (c *Controller) GetNetworks() ([]OmadaNetwork, error) {

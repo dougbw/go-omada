@@ -1,10 +1,62 @@
 package omada
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 )
+
+func (c *Controller) sendRequest(req *http.Request) (*http.Response, error) {
+
+	type responseBody struct {
+		ErrorCode int    `json:"errorCode"`
+		Msg       string `json:"msg"`
+	}
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		err = fmt.Errorf("status code: %d", res.StatusCode)
+		return nil, err
+	}
+
+	var buf bytes.Buffer
+	var response responseBody
+	tee := io.TeeReader(res.Body, &buf)
+	if err := json.NewDecoder(tee).Decode(&response); err != nil {
+		return nil, err
+	}
+
+	if response.ErrorCode != 0 {
+		fmt.Printf("response error code: %d", response.ErrorCode)
+
+		// attempt login
+		err := c.internalLogin()
+		if err != nil {
+			return nil, err
+		}
+
+		// retry
+		res, err := c.httpClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+
+		if res.StatusCode != http.StatusOK {
+			err = fmt.Errorf("status code: %d", res.StatusCode)
+			return nil, err
+		}
+
+	}
+
+	return res, nil
+}
 
 func (c *Controller) invokeRequest(path string, queryParams map[string]string) (*http.Response, error) {
 
@@ -30,15 +82,11 @@ func (c *Controller) invokeRequest(path string, queryParams map[string]string) (
 	req.Header.Set("Accept", "application/json")
 	req.Header.Add("Csrf-Token", c.token)
 
-	res, err := c.httpClient.Do(req)
+	res, err := c.sendRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("status code: %d", res.StatusCode)
-		return nil, err
-	}
 	return res, nil
 
 }

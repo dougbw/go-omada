@@ -35,8 +35,17 @@ func (c *Controller) invokeRequest(path string, queryParams map[string]string) (
 		return nil, err
 	}
 
+	// if the response code is 302 then there might be a login issue
+	// attempt to refresh the login and retry the request
 	if res.StatusCode == http.StatusFound {
-		fmt.Println("there is a login issue")
+		err := c.refreshLogin()
+		if err != nil {
+			return nil, err
+		}
+		res, err = c.httpClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if res.StatusCode != http.StatusOK {

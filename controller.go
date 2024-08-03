@@ -20,6 +20,8 @@ type Controller struct {
 	token        string
 	siteId       string
 	Sites        map[string]string
+	user         string
+	pass         string
 }
 
 type ControllerInfo struct {
@@ -188,4 +190,12 @@ func (c *Controller) Login(user string, pass string) error {
 
 	return nil
 
+}
+
+func (c *Controller) refreshLogin() error {
+	err := c.Login(c.user, c.pass)
+	if err != nil {
+		return err
+	}
+	return nil
 }

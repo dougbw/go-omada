@@ -192,7 +192,7 @@ func (c *Controller) Login(user string, pass string) error {
 
 }
 
-func (c *Controller) internalLogin() error {
+func (c *Controller) refreshLogin() error {
 	err := c.Login(c.user, c.pass)
 	if err != nil {
 		return err

@@ -37,7 +37,7 @@ func (c *Controller) sendRequest(req *http.Request) (*http.Response, error) {
 		fmt.Printf("response error code: %d", response.ErrorCode)
 
 		// attempt login
-		err := c.internalLogin()
+		err := c.refreshLogin()
 		if err != nil {
 			return nil, err
 		}

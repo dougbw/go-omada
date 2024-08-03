@@ -35,6 +35,10 @@ func (c *Controller) invokeRequest(path string, queryParams map[string]string) (
 		return nil, err
 	}
 
+	if res.StatusCode == http.StatusFound {
+		fmt.Println("there is a login issue")
+	}
+
 	if res.StatusCode != http.StatusOK {
 		err = fmt.Errorf("status code: %d", res.StatusCode)
 		return nil, err

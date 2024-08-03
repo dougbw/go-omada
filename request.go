@@ -42,10 +42,16 @@ func (c *Controller) invokeRequest(path string, queryParams map[string]string) (
 		if err != nil {
 			return nil, err
 		}
-		res, err = c.httpClient.Do(req)
+		req.Header.Set("Csrf-Token", c.token)
+		res2, err := c.httpClient.Do(req)
 		if err != nil {
 			return nil, err
 		}
+		if res2.StatusCode != http.StatusOK {
+			err = fmt.Errorf("status code: %d", res.StatusCode)
+			return nil, err
+		}
+		return res2, nil
 	}
 
 	if res.StatusCode != http.StatusOK {

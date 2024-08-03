@@ -30,9 +30,6 @@ func (c *Controller) invokeRequest(path string, queryParams map[string]string) (
 	req.Header.Set("Accept", "application/json")
 	req.Header.Add("Csrf-Token", c.token)
 
-	fmt.Printf("token before: %s\n", c.token)
-	fmt.Printf("jar before: %v\n", c.httpClient.Jar)
-
 	res, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -45,19 +42,18 @@ func (c *Controller) invokeRequest(path string, queryParams map[string]string) (
 		if err != nil {
 			return nil, err
 		}
-		req.Header.Set("Csrf-Token", c.token)
-		fmt.Printf("token after : %s\n", c.token)
-		fmt.Printf("jar after : %v\n", c.httpClient.Jar)
 
-		res2, err := c.httpClient.Do(req)
+		req, err := http.NewRequest("GET", omadaUrl.String(), nil)
 		if err != nil {
 			return nil, err
 		}
-		if res2.StatusCode != http.StatusOK {
-			err = fmt.Errorf("status code: %d", res.StatusCode)
+		req.Header.Set("Accept", "application/json")
+		req.Header.Add("Csrf-Token", c.token)
+		res, err = c.httpClient.Do(req)
+		if err != nil {
 			return nil, err
 		}
-		return res2, nil
+
 	}
 
 	if res.StatusCode != http.StatusOK {

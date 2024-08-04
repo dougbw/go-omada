@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 )
 
 func (c *Controller) invokeRequest(path string, queryParams map[string]string) (*http.Response, error) {
@@ -29,10 +30,37 @@ func (c *Controller) invokeRequest(path string, queryParams map[string]string) (
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Add("Csrf-Token", c.token)
-
 	res, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
+	}
+
+	// if the response is a 302 to /login then there is a login issue
+	// attempt to refresh the login and retry the request
+	if res.StatusCode == http.StatusFound {
+
+		location := res.Header.Get("Location")
+		pattern, _ := regexp.Compile(`\/login$`)
+		if !pattern.MatchString(location) {
+			return nil, fmt.Errorf("unexpected response: redirect to %s", location)
+		}
+
+		err := c.refreshLogin()
+		if err != nil {
+			return nil, err
+		}
+
+		req, err := http.NewRequest("GET", omadaUrl.String(), nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Accept", "application/json")
+		req.Header.Add("Csrf-Token", c.token)
+		res, err = c.httpClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+
 	}
 
 	if res.StatusCode != http.StatusOK {

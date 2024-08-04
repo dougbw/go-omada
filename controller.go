@@ -20,6 +20,8 @@ type Controller struct {
 	token        string
 	siteId       string
 	Sites        map[string]string
+	user         string
+	pass         string
 }
 
 type ControllerInfo struct {
@@ -93,6 +95,9 @@ func New(baseURL string) Controller {
 		Jar:       jar,
 		Timeout:   (30 * time.Second),
 		Transport: transport,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}
 
 	return Controller{
@@ -138,6 +143,9 @@ func (c *Controller) GetControllerInfo() error {
 }
 
 func (c *Controller) Login(user string, pass string) error {
+
+	c.user = user
+	c.pass = pass
 
 	endpoint, err := url.JoinPath(c.baseURL, c.controllerId, "/api/v2/login")
 	if err != nil {
@@ -188,4 +196,14 @@ func (c *Controller) Login(user string, pass string) error {
 
 	return nil
 
+}
+
+func (c *Controller) refreshLogin() error {
+	jar, _ := cookiejar.New(nil)
+	c.httpClient.Jar = jar
+	err := c.Login(c.user, c.pass)
+	if err != nil {
+		return err
+	}
+	return nil
 }

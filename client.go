@@ -53,7 +53,13 @@ func (c *Controller) GetClients() ([]Client, error) {
 		if client.Ip == "" {
 			continue
 		}
-		client.DnsName = makeDNSSafe(client.Name)
+
+		var dnsName string
+		dnsName = client.Name
+		if client.Name == client.MAC && client.HostName != "--" {
+			dnsName = client.HostName
+		}
+		client.DnsName = makeDNSSafe(dnsName)
 		clients = append(clients, client)
 	}
 

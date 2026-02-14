@@ -42,7 +42,7 @@
                 "deviceType": "unknown",
                 "ip": "10.0.0.102",
                 "ipv6List": [
-                    "ffff::ffff:ffff:ffff:ffff"
+                    "2001:db8:f7::102"
                 ],
                 "connectType": 2,
                 "connectDevType": "switch",
@@ -73,6 +73,9 @@
                 "hostName": "Google-Nest-Mini",
                 "deviceType": "unknown",
                 "ip": "10.0.0.103",
+                "ipv6List": [
+                    "2001:db8:f7::103"
+                ],
                 "connectType": 1,
                 "connectDevType": "ap",
                 "connectedToWirelessRouter": false,

@@ -25,9 +25,11 @@ func TestGetClients(t *testing.T) {
 
 	assert.Equal(t, "Google Nest Mini", clients[1].Name)
 	assert.Equal(t, "google-nest-mini", clients[1].DnsName)
+	assert.Equal(t, 1, len(clients[1].IPV6List))
+	assert.Equal(t, "2001:db8:f7::103", clients[1].IPV6List[0])
 
 	assert.Equal(t, "win10-vm", clients[2].Name)
 	assert.Equal(t, "win10-vm", clients[2].DnsName)
 	assert.Equal(t, 1, len(clients[2].IPV6List))
-	assert.Equal(t, "ffff::ffff:ffff:ffff:ffff", clients[2].IPV6List[0])
+	assert.Equal(t, "2001:db8:f7::102", clients[2].IPV6List[0])
 }

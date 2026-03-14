@@ -172,6 +172,7 @@ func (c *Controller) Login(user string, pass string) error {
 	if err != nil {
 		return err
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		err = fmt.Errorf("status code: %d", res.StatusCode)

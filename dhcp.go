@@ -1,7 +1,6 @@
 package omada
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
@@ -36,20 +35,15 @@ func (c *Controller) GetDhcpReservations() ([]DhcpReservation, error) {
 		"currentPage":     "1",
 		"currentPageSize": "999",
 	}
-	res, err := c.invokeRequest(path, queryParams)
+	res, err := invokeRequest[dhcpReservationResponse](c, path, queryParams)
 	if err != nil {
 		return nil, err
 	}
 
-	var dhcpReservationResponse dhcpReservationResponse
-	if err := json.NewDecoder(res.Body).Decode(&dhcpReservationResponse); err != nil {
+	if res.ErrorCode != 0 {
+		err = fmt.Errorf("failed to get list of dhcp reservation: code='%d', message='%s'", res.ErrorCode, res.Msg)
 		return nil, err
 	}
 
-	if dhcpReservationResponse.ErrorCode != 0 {
-		err = fmt.Errorf("failed to get list of dhcp reservation: code='%d', message='%s'", dhcpReservationResponse.ErrorCode, dhcpReservationResponse.Msg)
-		return nil, err
-	}
-
-	return dhcpReservationResponse.Result.Data, nil
+	return res.Result.Data, nil
 }

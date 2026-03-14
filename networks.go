@@ -1,7 +1,6 @@
 package omada
 
 import (
-	"encoding/json"
 	"fmt"
 	"sort"
 )
@@ -32,22 +31,17 @@ func (c *Controller) GetNetworks() ([]OmadaNetwork, error) {
 		"currentPage":     "1",
 		"currentPageSize": "999",
 	}
-	res, err := c.invokeRequest(path, queryParams)
+	res, err := invokeRequest[GetNetworksResponse](c, path, queryParams)
 	if err != nil {
 		return nil, err
 	}
 
-	var networkResponse GetNetworksResponse
-	if err := json.NewDecoder(res.Body).Decode(&networkResponse); err != nil {
+	if res.ErrorCode != 0 {
+		err = fmt.Errorf("failed to get list of networks: code='%d', message='%s'", res.ErrorCode, res.Msg)
 		return nil, err
 	}
 
-	if networkResponse.ErrorCode != 0 {
-		err = fmt.Errorf("failed to get list of networks: code='%d', message='%s'", networkResponse.ErrorCode, networkResponse.Msg)
-		return nil, err
-	}
-
-	networks := networkResponse.Result.Data
+	networks := res.Result.Data
 	sort.Slice(networks, func(i, j int) bool {
 		return networks[i].Name < networks[j].Name
 	})

@@ -1,13 +1,14 @@
 package omada
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"regexp"
 )
 
-func (c *Controller) invokeRequest(path string, queryParams map[string]string) (*http.Response, error) {
+func invokeRequest[T any](c *Controller, path string, queryParams map[string]string) (*T, error) {
 
 	address, err := url.JoinPath(c.baseURL, c.controllerId, path)
 	if err != nil {
@@ -60,13 +61,19 @@ func (c *Controller) invokeRequest(path string, queryParams map[string]string) (
 		if err != nil {
 			return nil, err
 		}
-
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		err = fmt.Errorf("status code: %d", res.StatusCode)
 		return nil, err
 	}
-	return res, nil
+
+	var out T
+	if err := json.NewDecoder(res.Body).Decode(&out); err != nil {
+		return nil, err
+	}
+
+	return &out, nil
 
 }

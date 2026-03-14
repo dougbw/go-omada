@@ -40,6 +40,8 @@ func invokeRequest[T any](c *Controller, path string, queryParams map[string]str
 	// attempt to refresh the login and retry the request
 	if res.StatusCode == http.StatusFound {
 
+		res.Body.Close()
+
 		location := res.Header.Get("Location")
 		pattern, _ := regexp.Compile(`\/login$`)
 		if !pattern.MatchString(location) {

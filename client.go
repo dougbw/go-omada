@@ -1,7 +1,6 @@
 package omada
 
 import (
-	"encoding/json"
 	"fmt"
 	"sort"
 )
@@ -74,23 +73,18 @@ func (c *Controller) GetClients() ([]Client, error) {
 		"currentPageSize": "999",
 		"filters.active":  "true",
 	}
-	res, err := c.invokeRequest(path, queryParams)
+	res, err := invokeRequest[clientResponse](c, path, queryParams)
 	if err != nil {
 		return nil, err
 	}
 
-	var clientResponse clientResponse
-	if err := json.NewDecoder(res.Body).Decode(&clientResponse); err != nil {
-		return nil, err
-	}
-
-	if clientResponse.ErrorCode != 0 {
-		err = fmt.Errorf("failed to get list of clients: code='%d', message='%s'", clientResponse.ErrorCode, clientResponse.Msg)
+	if res.ErrorCode != 0 {
+		err = fmt.Errorf("failed to get list of clients: code='%d', message='%s'", res.ErrorCode, res.Msg)
 		return nil, err
 	}
 
 	var clients []Client
-	for _, client := range clientResponse.Result.Data {
+	for _, client := range res.Result.Data {
 		if client.Ip == "" {
 			continue
 		}

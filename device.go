@@ -1,7 +1,6 @@
 package omada
 
 import (
-	"encoding/json"
 	"fmt"
 	"sort"
 )
@@ -144,23 +143,18 @@ func (c *Controller) GetDevices() ([]Device, error) {
 		"currentPage":     "1",
 		"currentPageSize": "999",
 	}
-	res, err := c.invokeRequest(path, queryParams)
+	res, err := invokeRequest[deviceResponse](c, path, queryParams)
 	if err != nil {
 		return nil, err
 	}
 
-	var deviceResponse deviceResponse
-	if err := json.NewDecoder(res.Body).Decode(&deviceResponse); err != nil {
-		return nil, err
-	}
-
-	if deviceResponse.ErrorCode != 0 {
-		err = fmt.Errorf("failed to get list of devices: code='%d', message='%s'", deviceResponse.ErrorCode, deviceResponse.Msg)
+	if res.ErrorCode != 0 {
+		err = fmt.Errorf("failed to get list of devices: code='%d', message='%s'", res.ErrorCode, res.Msg)
 		return nil, err
 	}
 
 	var devices []Device
-	for _, device := range deviceResponse.Result {
+	for _, device := range res.Result {
 		device.DnsName = makeDNSSafe(device.Name)
 		devices = append(devices, device)
 	}

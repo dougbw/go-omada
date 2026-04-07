@@ -3,7 +3,20 @@ package omada
 import (
 	"fmt"
 	"sort"
+
+	goversion "github.com/hashicorp/go-version"
 )
+
+type clientsOpenAPIBody struct {
+	Filters struct {
+		Active bool `json:"active"`
+	} `json:"filters"`
+	Sorts                 struct{} `json:"sorts"`
+	HideHealthUnsupported bool     `json:"hideHealthUnsupported"`
+	Scope                 int      `json:"scope"`
+	Page                  int      `json:"page"`
+	PageSize              int      `json:"pageSize"`
+}
 
 type clientResponse struct {
 	ErrorCode int    `json:"errorCode"`
@@ -67,20 +80,22 @@ type Client struct {
 
 func (c *Controller) GetClients() ([]Client, error) {
 
-	path := fmt.Sprintf("api/v2/sites/%s/clients", c.siteId)
-	queryParams := map[string]string{
-		"currentPage":     "1",
-		"currentPageSize": "999",
-		"filters.active":  "true",
+	var res *clientResponse
+	var err error
+
+	minVer, _ := goversion.NewVersion("6.2.0")
+	curVer, _ := goversion.NewVersion(c.controllerVer)
+	if curVer != nil && curVer.GreaterThanOrEqual(minVer) {
+		res, err = c.getClientsOpenAPI()
+	} else {
+		res, err = c.getClientsLegacy()
 	}
-	res, err := invokeRequest[clientResponse](c, path, queryParams)
 	if err != nil {
 		return nil, err
 	}
 
 	if res.ErrorCode != 0 {
-		err = fmt.Errorf("failed to get list of clients: code='%d', message='%s'", res.ErrorCode, res.Msg)
-		return nil, err
+		return nil, fmt.Errorf("failed to get list of clients: code='%d', message='%s'", res.ErrorCode, res.Msg)
 	}
 
 	var clients []Client
@@ -98,4 +113,29 @@ func (c *Controller) GetClients() ([]Client, error) {
 
 	return clients, nil
 
+}
+
+func (c *Controller) getClientsLegacy() (*clientResponse, error) {
+	path := fmt.Sprintf("api/v2/sites/%s/clients", c.siteId)
+	queryParams := map[string]string{
+		"currentPage":     "1",
+		"currentPageSize": "999",
+		"filters.active":  "true",
+	}
+	return invokeRequest[clientResponse](c, path, queryParams)
+}
+
+func (c *Controller) getClientsOpenAPI() (*clientResponse, error) {
+	path := fmt.Sprintf("openapi/v2/%s/sites/%s/clients", c.controllerId, c.siteId)
+	body := clientsOpenAPIBody{
+		HideHealthUnsupported: true,
+		Scope:                 1,
+		Page:                  1,
+		PageSize:              999,
+	}
+	body.Filters.Active = true
+	extraHeaders := map[string]string{
+		"Omada-Request-Source": "web-local",
+	}
+	return invokePostRequest[clientResponse](c, path, body, extraHeaders)
 }

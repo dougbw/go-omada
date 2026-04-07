@@ -14,14 +14,15 @@ import (
 )
 
 type Controller struct {
-	httpClient   *http.Client
-	baseURL      string
-	controllerId string
-	token        string
-	siteId       string
-	Sites        map[string]string
-	user         string
-	pass         string
+	httpClient    *http.Client
+	baseURL       string
+	controllerId  string
+	controllerVer string
+	token         string
+	siteId        string
+	Sites         map[string]string
+	user          string
+	pass          string
 }
 
 type ControllerInfo struct {
@@ -139,6 +140,7 @@ func (c *Controller) GetControllerInfo() error {
 	}
 
 	c.controllerId = infoResponse.Result.OmadacID
+	c.controllerVer = infoResponse.Result.ControllerVer
 	return nil
 
 }

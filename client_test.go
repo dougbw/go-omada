@@ -7,6 +7,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestGetClientsOpenAPI(t *testing.T) {
+	server, c := setupOpenAPITestServer(t)
+	defer server.Close()
+
+	clients, err := c.GetClients()
+	if err != nil {
+		t.Fatalf("test failure on 'GetClients' (OpenAPI): %v", err)
+	}
+
+	assert.Len(t, clients, 3)
+	assert.Equal(t, "Client 001", clients[0].Name)
+	assert.Equal(t, "client-001", clients[0].DnsName)
+	ip := net.ParseIP(clients[0].Ip)
+	assert.NotNil(t, ip)
+}
+
 func TestGetClients(t *testing.T) {
 
 	clients, err := testController.GetClients()

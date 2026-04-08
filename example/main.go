@@ -11,7 +11,10 @@ import (
 func main() {
 
 	// variables
-	controllerUrl := "https://10.0.0.10"
+	controllerUrl, present := os.LookupEnv("OMADA_URL")
+	if !present {
+		controllerUrl = "https://10.0.0.10"
+	}
 	user, present := os.LookupEnv("OMADA_USERNAME")
 	if !present {
 		log.Fatal("⛔ required environment variable not set: OMADA_USERNAME")

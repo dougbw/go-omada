@@ -40,43 +40,76 @@ func TestMain(m *testing.M) {
 
 }
 
-func setupTestServer() *httptest.Server {
-
-	controllerId := testData["controllerId"]
-	siteId := testData["siteId"]
-	pathLogin := fmt.Sprintf("/%s/api/v2/login", controllerId)
-	pathUsers := fmt.Sprintf("/%s/api/v2/users/current", controllerId)
-	pathClients := fmt.Sprintf("/%s/api/v2/sites/%s/clients", controllerId, siteId)
-	pathDevices := fmt.Sprintf("/%s/api/v2/sites/%s/devices", controllerId, siteId)
-	pathNetworks := fmt.Sprintf("/%s/api/v2/sites/%s/setting/lan/networks", controllerId, siteId)
-	pathDhcp := fmt.Sprintf("/%s/api/v2/sites/%s/setting/service/dhcp", controllerId, siteId)
-
-	responses := map[string]string{
-		"/api/info":  "./test-data/info-response.json",
-		pathLogin:    "./test-data/login-response.json",
-		pathUsers:    "./test-data/users-response.json",
-		pathClients:  "./test-data/clients-response.json",
-		pathDevices:  "./test-data/devices-response.json",
-		pathNetworks: "./test-data/networks-response.json",
-		pathDhcp:     "./test-data/dhcp-reservation-response.json",
-	}
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		responseFile, ok := responses[r.URL.Path]
-		if !ok {
-			log.Fatalf("Unexpected request path on mock server: %s", r.URL.Path)
-		}
-		response, err := os.ReadFile(responseFile)
+func serveFile(file string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, err := os.ReadFile(file)
 		if err != nil {
 			log.Fatal(err)
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write(response)
-	}))
+		w.Write(data)
+	}
+}
 
-	return server
+func newTestServer(routes map[string]http.HandlerFunc) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler, ok := routes[r.URL.Path]
+		if !ok {
+			log.Fatalf("unexpected request path on mock server: %s", r.URL.Path)
+		}
+		handler(w, r)
+	}))
+}
+
+func commonRoutes(infoFile string) map[string]http.HandlerFunc {
+	controllerId := testData["controllerId"]
+	return map[string]http.HandlerFunc{
+		"/api/info": serveFile(infoFile),
+		fmt.Sprintf("/%s/api/v2/login", controllerId):         serveFile("./test-data/login-response.json"),
+		fmt.Sprintf("/%s/api/v2/users/current", controllerId): serveFile("./test-data/users-response.json"),
+	}
+}
+
+func setupTestServer() *httptest.Server {
+	controllerId := testData["controllerId"]
+	siteId := testData["siteId"]
+
+	routes := commonRoutes("./test-data/info-response.json")
+	routes[fmt.Sprintf("/%s/api/v2/sites/%s/clients", controllerId, siteId)] = serveFile("./test-data/clients-response.json")
+	routes[fmt.Sprintf("/%s/api/v2/sites/%s/devices", controllerId, siteId)] = serveFile("./test-data/devices-response.json")
+	routes[fmt.Sprintf("/%s/api/v2/sites/%s/setting/lan/networks", controllerId, siteId)] = serveFile("./test-data/networks-response.json")
+	routes[fmt.Sprintf("/%s/api/v2/sites/%s/setting/service/dhcp", controllerId, siteId)] = serveFile("./test-data/dhcp-reservation-response.json")
+
+	return newTestServer(routes)
 }
 
 func TestLogin(t *testing.T) {
 	assert.Equal(t, testData["controllerId"], testController.controllerId)
+}
+
+func setupOpenAPITestServer(t *testing.T) (*httptest.Server, Controller) {
+	t.Helper()
+	controllerId := testData["controllerId"]
+	siteId := testData["siteId"]
+
+	routes := commonRoutes("./test-data/openapi/info-response.json")
+	routes[fmt.Sprintf("/openapi/v2/%s/sites/%s/clients", controllerId, siteId)] = func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "web-local", r.Header.Get("Omada-Request-Source"))
+		assert.NotEmpty(t, r.Header.Get("Csrf-Token"))
+		serveFile("./test-data/clients-response.json")(w, r)
+	}
+
+	server := newTestServer(routes)
+	c := New(server.URL)
+	if err := c.GetControllerInfo(); err != nil {
+		t.Fatal("GetControllerInfo:", err)
+	}
+	if err := c.Login("user", "pass"); err != nil {
+		t.Fatal("Login:", err)
+	}
+	if err := c.SetSite("Home"); err != nil {
+		t.Fatal("SetSite:", err)
+	}
+	return server, c
 }

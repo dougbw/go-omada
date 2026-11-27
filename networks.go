@@ -22,6 +22,7 @@ type OmadaNetwork struct {
 	Domain  string `json:"domain,omitempty"`
 	Purpose string `json:"purpose"`
 	Subnet  string `json:"gatewaySubnet"`
+	Vlan    int    `json:"vlan"`
 }
 
 func (c *Controller) GetNetworks() ([]OmadaNetwork, error) {
